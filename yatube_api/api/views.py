@@ -1,11 +1,10 @@
 """Модуль views."""
 from django.shortcuts import get_object_or_404
-from rest_framework import filters
-from rest_framework import permissions, viewsets
+from rest_framework import filters, permissions, viewsets, mixins
 from rest_framework.pagination import LimitOffsetPagination
 
 from api.permissions import IsAuthorOrReadOnlyPermission
-from posts.models import Group, Post, Follow
+from posts.models import Group, Post
 from .serializers import (
     CommentSerializer,
     GroupSerializer,
@@ -36,7 +35,7 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = (
-        permissions.IsAuthenticatedOrReadOnly,
+        permissions.AllowAny,
     )
 
 
@@ -63,14 +62,17 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=self.get_post())
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
     """Класс для подписчиков."""
 
-    queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ("following__username",)
+    search_fields = ('following__username',)
 
     def get_queryset(self):
         """Переопределение запроса."""
-        return self.queryset.filter(user=self.request.user)
+        return self.request.user.follower.all()

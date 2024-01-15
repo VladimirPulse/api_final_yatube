@@ -35,6 +35,11 @@ class Post(models.Model):
         related_name='posts', blank=True, null=True
     )
 
+    class Meta:
+        """Уточняющий класс."""
+
+        ordering = ['pub_date']
+
     def __str__(self):
         """Показать текст поста."""
         return self.text
